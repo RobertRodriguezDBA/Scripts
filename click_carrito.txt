@@ -1,0 +1,14 @@
+click_carrito
+A - Agente ventas
+C - Cliente
+
+confirmar pedido pasa a
+sale_order - odoo - cron toma pedido confirma y factura - se borra al terminar (facturar)
+click_carrito_bak
+
+sale_order - encabezado del pedido
+- origen CK de la factura
+factura 3 letras sucursal M y una letra A y B / año / numero factura
+- sale_order_line
+
+Catalogos vista v_busqueda_por_descripcion

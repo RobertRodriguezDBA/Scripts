@@ -1,0 +1,129 @@
+SELECT
+    relname,
+    indexrelname,
+    idx_scan,
+    pg_size_pretty(pg_relation_size(indexrelid))
+FROM
+    pg_stat_user_indexes
+WHERE
+    schemaname NOT IN ('pg_catalog', 'information_schema')
+ORDER BY
+    idx_scan ASC;
+
+================================================================
+
+SELECT
+    idstat.relname,
+    idstat.indexrelname,
+    idstat.idx_scan,
+    pg_size_pretty(pg_relation_size(idstat.indexrelid)) AS idxSize
+FROM
+    pg_stat_user_indexes AS idstat
+JOIN
+    pg_index AS i ON idstat.indexrelid = i.indexrelid
+WHERE
+    idstat.idx_scan = 0
+    AND i.indisunique IS FALSE
+    AND i.indisprimary IS FALSE
+ORDER BY
+    pg_relation_size(idstat.indexrelid) DESC;
+
+================================================================
+
+select * from pg_stat_user_tables where relname = 'mail_message' limit 1;
+
+================================================================
+
+SELECT
+    idstat.relname,
+    idstat.indexrelname,
+    idstat.idx_scan,
+    pg_size_pretty(pg_relation_size(idstat.indexrelid)) AS idxSize
+FROM
+    pg_stat_user_indexes AS idstat
+JOIN
+    pg_index AS i ON idstat.indexrelid = i.indexrelid
+WHERE
+    idstat.idx_scan = 0
+    AND i.indisunique IS FALSE
+    AND i.indisprimary IS FALSE
+ORDER BY
+    pg_relation_size(idstat.indexrelid) DESC;
+
+================================================================
+
+SELECT
+indrelid::regclass AS tabla,
+array_agg(indexrelid::regclass) AS indices_duplicados,
+indkey AS columnas_id
+FROM pg_index
+GROUP BY indrelid, indkey
+HAVING COUNT(*) > 1;
+
+================================================================
+
+SELECT 
+    relname AS tabla, 
+    n_live_tup AS filas_estimadas
+FROM 
+    pg_stat_user_tables
+ORDER BY 
+    n_live_tup DESC;
+
+================================================================
+
+SELECT
+    t.relname AS tabla,
+    s.n_live_tup AS filas_estimadas,
+    pg_size_pretty(pg_total_relation_size(t.oid)) AS tamaño_total,
+    pg_size_pretty(pg_relation_size(t.oid)) AS tamaño_datos,
+    pg_size_pretty(pg_total_relation_size(t.oid) - pg_relation_size(t.oid)) AS tamaño_indices
+FROM 
+    pg_class t
+JOIN 
+    pg_stat_user_tables s ON t.relname = s.relname
+WHERE 
+    t.relkind = 'r' -- Solo tablas reales (no vistas ni índices)
+ORDER BY 
+    pg_total_relation_size(t.oid) DESC;
+
+================================================================
+
+SELECT
+    --schemaname AS esquema,
+    relname AS tabla,
+    n_live_tup AS filas_vivas,
+    n_dead_tup AS filas_muertas,
+    round(n_dead_tup::numeric / (n_live_tup + n_dead_tup + 1) * 100, 2) AS porcentaje_muerto,
+    last_autovacuum,
+    last_analyze
+FROM
+    pg_stat_user_tables
+WHERE
+    n_live_tup > 1000  -- Ignoramos tablas muy pequeñas
+ORDER BY
+porcentaje_muerto DESC;
+--    n_dead_tup DESC;
+
+--
+
+SELECT
+    idstat.schemaname AS esquema,
+    idstat.relname AS tabla,
+    idstat.indexrelname AS indice,
+    pg_size_pretty(pg_relation_size(idstat.indexrelid)) AS tamaño_indice,
+    idstat.idx_scan AS escaneos_del_indice,
+    idstat.idx_tup_read AS filas_leidas_indice,
+    idstat.idx_tup_fetch AS filas_extraidas_indice
+FROM 
+    pg_stat_user_indexes AS idstat
+JOIN 
+    pg_index AS i ON idstat.indexrelid = i.indexrelid
+WHERE 
+    i.indisunique IS FALSE           -- No borres índices UNIQUE (PostgreSQL los necesita para integridad)
+    AND idstat.idx_scan < 50         -- Umbral: menos de 50 usos (ajustable)
+    AND pg_relation_size(idstat.indexrelid) > 1048576 -- Solo índices mayores a 1MB
+ORDER BY 
+    pg_relation_size(idstat.indexrelid) DESC;
+    --
+    
