@@ -350,16 +350,19 @@ set search_path to public;
 
 
 SELECT sw.name AS sucursal,
-            ai.date_invoice AS fecha,
-            ai.id AS id_factura,
-                CASE
-                    WHEN aj.order_type::text = 'local'::text THEN 'Local'::text
-                    ELSE 'Foraneo'::text
-                END AS tipo_pedido
-           FROM account_invoice ai
-             JOIN account_journal aj ON aj.id = ai.journal_id
-             JOIN stock_warehouse sw ON sw.id = ai.warehouse_id
-          WHERE ai.type::text = 'out_invoice'::text AND (ai.state::text = ANY (ARRAY['open'::character varying::text, 'paid'::character varying::text])) AND ai.date_invoice >= '2022-01-01'::date AND ai.date_invoice <= '2025-06-25'::date AND (aj.order_type::text = ANY (ARRAY['local'::character varying::text, 'foreign'::character varying::text]))
+ai.date_invoice AS fecha,
+ai.id AS id_factura,
+    CASE
+        WHEN aj.order_type::text = 'local'::text THEN 'Local'::text
+        ELSE 'Foraneo'::text
+    END AS tipo_pedido
+FROM account_invoice ai
+    JOIN account_journal aj ON aj.id = ai.journal_id
+    JOIN stock_warehouse sw ON sw.id = ai.warehouse_id
+WHERE ai.type::text = 'out_invoice'::text AND (ai.state::text = ANY (ARRAY['open'::character varying::text, 'paid'::character varying::text])) AND ai.date_invoice >= '2022-01-01'::date AND ai.date_invoice <= '2025-06-25'::date AND (aj.order_type::text = ANY (ARRAY['local'::character varying::text, 'foreign'::character varying::text]))
+
+
+
 
 
 
@@ -371,13 +374,13 @@ SELECT sw.name AS sucursal,
 
 set search_path to public;
 SELECT
-                isc.id
-            FROM imp_stock_container AS isc
-            WHERE
-                    isc.name = 'CVB-045'
-                AND isc.container_type = 'internal'
-                AND isc.availability = FALSE
-                AND isc.warehouse_id = 7614
+    isc.id
+FROM imp_stock_container AS isc
+WHERE
+    isc.name = 'CVB-045'
+    AND isc.container_type = 'internal'
+    AND isc.availability = FALSE
+    AND isc.warehouse_id = 7614;
 
 
 ------
@@ -411,3 +414,10 @@ SELECT
 FROM pg_stat_user_tables 
 WHERE pg_total_relation_size(relid) > (5 * 1024 * 1024 * 1024);
 
+---
+SELECT n.nspname as schema, t.typname as type_name
+FROM pg_type t
+LEFT JOIN pg_namespace n ON n.oid = t.typnamespace
+WHERE (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_class c WHERE c.oid = t.typrelid))
+  AND NOT EXISTS(SELECT 1 FROM pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
+  AND n.nspname NOT IN ('pg_catalog', 'information_schema');

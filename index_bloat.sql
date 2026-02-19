@@ -96,44 +96,69 @@ limit 20;
 set search_path to public;
 /* ALTER TABLERS */
 /* 
-ALTER TABLE stock_move SET (autovacuum_vacuum_scale_factor = 0.05); --17/02/2026
-ALTER TABLE stock_move_line SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
 ALTER TABLE imp_stock_shipping SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
-ALTER TABLE stock_picking SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
 ALTER TABLE imp_stock_pack_table SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
 ALTER TABLE imp_stock_shipping SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
 ALTER TABLE imp_stock_area SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
-ALTER TABLE sale_order_line SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
+ALTER TABLE stock_move SET (autovacuum_vacuum_scale_factor = 0.05); --17/02/2026
+ALTER TABLE stock_move_line SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
+ALTER TABLE stock_picking SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
 ALTER TABLE stock_rack SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
 ALTER TABLE stock_package SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
 ALTER TABLE stock_transfer_order SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
+ALTER TABLE sale_order_line SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
 ALTER TABLE supply_capture_order SET (autovacuum_vacuum_scale_factor = 0.05); -- 18/02/2026
 ALTER TABLE account_move SET (autovacuum_vacuum_scale_factor = 0.05); -- 19/02/2026
+ALTER TABLE mail_message SET (autovacuum_vacuum_scale_factor = 0.05); -- 19/02/2026
 */
 
-ALTER TABLE account_move SET (autovacuum_vacuum_scale_factor = 0.05);
+ALTER TABLE mail_message SET (autovacuum_vacuum_scale_factor = 0.05);
 
 
 SELECT relname, reloptions 
 FROM pg_class 
-WHERE relname ilike 'account_move%'
-and reloptions NOTNULL;
+WHERE relname ilike 'mail_%'
+--and reloptions NOTNULL;
 
 /* Monitorear: */
 SELECT 
-    relname, 
-    n_live_tup, 
-    n_dead_tup, 
+    relname,
+    n_live_tup,
+    n_dead_tup,
     round(n_dead_tup::float / CASE WHEN n_live_tup = 0 THEN 1 ELSE n_live_tup END * 100) as current_percent,
-    last_autovacuum, 
+    last_autovacuum,
     autovacuum_count
-FROM pg_stat_user_tables 
-WHERE  round(n_dead_tup::float / CASE WHEN n_live_tup = 0 THEN 1 ELSE n_live_tup END * 100)  > 5
+FROM pg_stat_user_tables
+WHERE  round(n_dead_tup::float / CASE WHEN n_live_tup = 0 THEN 1 ELSE n_live_tup END * 100)  > 1
+-- and relname ilike 'res_%';
 ORDER BY last_autovacuum;
---WHERE relname = 'sale_order_line';
 
+select * 
+from pg_stat_user_tables
+
+--
+
+select * 
+from pg_stat_activity ;
+-- where query ilike 'autovacuum' 
+-- wait_event = 'AutoVacuumMain'
+-- limit 40;
 -- ------------------------------------------------------------------------------------------
 
+SELECT 
+    relname, 
+    n_dead_tup, 
+    n_live_tup, 
+    round(n_dead_tup::float / NULLIF(n_live_tup, 0)::float) as current_ratio
+FROM pg_stat_user_tables
+WHERE n_live_tup > 1000
+ORDER BY current_ratio DESC;
+
+--
+
+VACUUM (ANALYZE, VERBOSE) imp_stock_shipping;
+
+--
 SELECT "stock_box".id FROM "stock_box" WHERE
 
 
