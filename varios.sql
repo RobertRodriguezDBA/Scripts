@@ -248,3 +248,166 @@ and upper(trim(clave))='SALCIDO'
 limit 1;
 
 select * from acc_usuarios where id_usuario=3342;
+
+--------------------------------
+
+SELECT pid, 
+       wait_event_type, 
+       wait_event, 
+       query, 
+       state 
+FROM pg_stat_activity 
+WHERE wait_event_type = 'Lock';
+
+
+-------------------------------------
+set search_path to public;
+SELECT null as product_id,null as product_id_tm, null as codigo_art, null as nombre_art, null as marca, null as aplicacion, null as rating, null as estatus,null as precio,null as precio_original,
+                   null as existencia,null as local, null as foraneo, null as multiplo_venta, null as oferta,count(*) as total_registros,null as multi_branch, null as is_outlet,null as descto_outlet 
+                   from v_click_busqueda_por_descripcion pt
+                   --where pt.system_id
+-------------------------------------
+
+set search_path to puvblic;
+select count1(system_id) 
+from v_click_busqueda_por_descripcion ;
+
+
+-------------------------------------
+select * from stock_warehouse limit 1;
+
+---------------------------------------------------------------------------------------------------------------
+
+
+
+select * from v_conveyor_belt_culiacan;
+ 
+
+SELECT isc.name AS caja,
+    COALESCE(ispt.name, '00'::character varying) AS mesa
+   FROM imp_stock_order_container isoc
+     JOIN imp_stock_order iso ON iso.id = isoc.order_id --ot
+     JOIN imp_stock_container isc ON isc.id = isoc.container_id
+     LEFT JOIN imp_stock_pack_bundle ispbu ON ispbu.id = isoc.bundle_id --ot
+     LEFT JOIN imp_stock_pack_table ispt ON ispt.id = ispbu.table_id
+  WHERE iso.warehouse_id = 7614 AND isoc.packed = false AND isc.container_type::text = 'internal'::text
+  UNION ALL
+ SELECT imp_cajas_mesas_convey.caja, 
+    imp_cajas_mesas_convey.mesa
+   FROM imp_cajas_mesas_convey;
+
+
+
+SELECT *
+   FROM imp_cajas_mesas_convey;
+
+
+
+SELECT n.nspname AS esquema, c.relname AS tabla, c.relreplident
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
+        AND c.relreplident = 'f'; -- 'f' significa FULL
+
+
+---------------------------------------------------------------------------------------------------------------
+
+
+WITH facts AS (
+         SELECT sw.name AS sucursal,
+            ai.date_invoice AS fecha,
+            ai.id AS id_factura,
+                CASE
+                    WHEN aj.order_type::text = 'local'::text THEN 'Local'::text
+                    ELSE 'Foraneo'::text
+                END AS tipo_pedido
+           FROM account_invoice ai
+             JOIN account_journal aj ON aj.id = ai.journal_id
+             JOIN stock_warehouse sw ON sw.id = ai.warehouse_id
+          WHERE ai.type::text = 'out_invoice'::text AND (ai.state::text = ANY (ARRAY['open'::character varying::text, 'paid'::character varying::text])) AND ai.date_invoice >= '2022-01-01'::date AND ai.date_invoice <= '2025-06-25'::date AND (aj.order_type::text = ANY (ARRAY['local'::character varying::text, 'foreign'::character varying::text]))
+        )
+ SELECT fc.sucursal,
+    fc.fecha,
+    fc.id_factura,
+    pt.name AS codigo,
+    ail.quantity AS cantidad,
+    round(ail.price_unit * (1::numeric - COALESCE(ail.discount, 0::numeric) / 100.0), 2) AS precio_unitario,
+        CASE
+            WHEN pt.currency_two_id = 3 THEN (pt.replacement_cost / COALESCE(rcr.rate, 0.05365206529209621993)::double precision)::numeric(10,2)
+            ELSE pt.replacement_cost::numeric(10,2)
+        END AS costo_reposicion,
+    fc.tipo_pedido
+   FROM facts fc
+     JOIN account_invoice_line ail ON fc.id_factura = ail.invoice_id
+     JOIN product_product pp ON pp.id = ail.product_id
+     JOIN product_template pt ON pt.id = pp.product_tmpl_id
+     LEFT JOIN res_currency_rate rcr ON rcr.currency_id = pt.currency_two_id AND rcr.name = fc.fecha
+  WHERE pt.type::text = 'product'::text
+  
+limit 100;
+
+set search_path to public;
+
+
+SELECT sw.name AS sucursal,
+            ai.date_invoice AS fecha,
+            ai.id AS id_factura,
+                CASE
+                    WHEN aj.order_type::text = 'local'::text THEN 'Local'::text
+                    ELSE 'Foraneo'::text
+                END AS tipo_pedido
+           FROM account_invoice ai
+             JOIN account_journal aj ON aj.id = ai.journal_id
+             JOIN stock_warehouse sw ON sw.id = ai.warehouse_id
+          WHERE ai.type::text = 'out_invoice'::text AND (ai.state::text = ANY (ARRAY['open'::character varying::text, 'paid'::character varying::text])) AND ai.date_invoice >= '2022-01-01'::date AND ai.date_invoice <= '2025-06-25'::date AND (aj.order_type::text = ANY (ARRAY['local'::character varying::text, 'foreign'::character varying::text]))
+
+
+
+
+
+
+
+
+
+set search_path to public;
+SELECT
+                isc.id
+            FROM imp_stock_container AS isc
+            WHERE
+                    isc.name = 'CVB-045'
+                AND isc.container_type = 'internal'
+                AND isc.availability = FALSE
+                AND isc.warehouse_id = 7614
+
+
+------
+/* CRON IR ODOO */
+--UPDATE ir_cron SET active = false WHERE active = true;
+SELECT * FROM ir_cron WHERE active = FALSE;
+
+------
+set search_path to public;
+SELECT
+    queryid,
+    calls,
+    round(total_time::numeric,2) AS total_time_ms,
+    round(mean_time::numeric,2) AS avg_time_ms,
+    rows,
+    shared_blks_hit,
+    shared_blks_read,
+    round(100 * shared_blks_hit / nullif(shared_blks_hit + shared_blks_read,0), 2) AS cache_hit_ratio,
+    query
+FROM
+    pg_stat_statements WHERE query like '%stock_rack%'
+ORDER BY
+    total_time DESC
+LIMIT 20;
+
+---
+
+SELECT 
+    relname, 
+    pg_size_pretty(pg_total_relation_size(relid)) as size
+FROM pg_stat_user_tables 
+WHERE pg_total_relation_size(relid) > (5 * 1024 * 1024 * 1024);
+

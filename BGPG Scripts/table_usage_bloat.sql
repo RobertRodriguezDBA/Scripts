@@ -38,3 +38,13 @@ ORDER BY ratio_muerte;
 -- Progreso
 SELECT relid::regclass, phase, sample_blks_total, sample_blks_scanned 
 FROM pg_stat_progress_analyze;
+
+
+SELECT 
+    --schemaname, 
+    relname AS tabla, 
+    last_analyze, 
+    last_autoanalyze,
+    (now() - last_analyze) AS antiguedad_stats
+FROM pg_stat_user_tables
+ORDER BY last_analyze DESC;

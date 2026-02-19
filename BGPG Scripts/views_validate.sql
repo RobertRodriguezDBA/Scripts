@@ -3,7 +3,7 @@ DO $$
 DECLARE 
     r RECORD;
 BEGIN
-    FOR r IN (SELECT viewname FROM pg_views WHERE schemaname = 'public' and viewname like 'f%') LOOP
+    FOR r IN (SELECT viewname FROM pg_views WHERE schemaname = 'public') LOOP
         BEGIN
             EXECUTE 'SELECT 1 FROM public.' || quote_ident(r.viewname) || ' LIMIT 0';
             RAISE NOTICE 'View Exist >>>> %: %', r.viewname, '<<<<';
@@ -15,3 +15,6 @@ END $$;
 
 --
 --select 1 from public.bi_ventas_eventos limit 0;
+SELECT viewname FROM pg_views WHERE schemaname = 'public'; --and viewname like 'f%'
+
+

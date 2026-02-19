@@ -14,3 +14,6 @@ SELECT indexrelname,
 FROM pg_stat_user_indexes 
        WHERE idx_scan > 0
        AND indexrelname not like '%uniq%';
+
+
+       

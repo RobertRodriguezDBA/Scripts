@@ -2,7 +2,7 @@
 
 -- DROP FUNCTION IF EXISTS public.click_busqueda_por_descripcion_sys(text, integer, text, integer, integer, boolean, integer);
 
-CREATE OR REPLACE FUNCTION public.click_busqueda_por_descripcion_sys(
+CREATE OR REPLACE FUNCTION public.api_busqueda_por_descripcion_sys(
 	iquery text,
 	icliente integer,
 	iclave_cte text,

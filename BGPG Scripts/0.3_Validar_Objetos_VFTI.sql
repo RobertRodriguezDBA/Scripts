@@ -17,7 +17,7 @@ BEGIN
 
     -- 2. Validar Funciones (Check de sintaxis básica)
     -- Postgres 14 es más estricto con tipos de datos.
-    RAISE NOTICE '>>>>>>>>>>>>>>   Validando funciones...';
+    RAISE NOTICE '>>>>>>>>>>>>>>   Validando Funciones...';
     -- Nota: La validación profunda requiere ejecución, aquí verificamos existencia y owner.
     -- Validar Funciones (Check de integridad de cuerpo y dependencias)
     FOR r IN (

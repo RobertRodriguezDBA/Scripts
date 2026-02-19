@@ -33,7 +33,7 @@ SELECT
 FROM pg_stat_user_tables
 WHERE n_live_tup > 1000
 AND n_dead_tup > 0
-ORDER BY ratio_muerte;
+ORDER BY ratio_muerte DESC;
 
 --
 -- Progreso
